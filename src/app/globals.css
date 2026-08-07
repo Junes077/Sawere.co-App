@@ -1,0 +1,166 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ---------------------------------------------------------------------- *
+ * Sawere Legal OS design tokens — a premium, minimal law-firm palette:
+ * cream & white surfaces, coffee/walnut ink, navy structure, dark-gold
+ * accents. Light mode is the primary "paper" feel; dark mode is a deep
+ * navy study.
+ * ---------------------------------------------------------------------- */
+
+:root {
+  --radius: 0.625rem;
+
+  /* Palette primitives */
+  --cream: #f8f4ea;
+  --cream-deep: #f0e9d8;
+  --white: #ffffff;
+  --coffee: #3a2e26;
+  --coffee-light: #6b5847;
+  --walnut: #4e3b2f;
+  --navy: #0d1b30;
+  --navy-light: #16294a;
+  --gold: #b6913c;
+  --gold-soft: #d8bd7e;
+
+  --background: var(--cream);
+  --foreground: var(--coffee);
+
+  --card: var(--white);
+  --card-foreground: var(--coffee);
+
+  --popover: var(--white);
+  --popover-foreground: var(--coffee);
+
+  --primary: var(--navy);
+  --primary-foreground: var(--cream);
+
+  --secondary: var(--cream-deep);
+  --secondary-foreground: var(--coffee);
+
+  --muted: var(--cream-deep);
+  --muted-foreground: var(--coffee-light);
+
+  --accent: var(--gold);
+  --accent-foreground: var(--navy);
+
+  --destructive: #a3342b;
+  --destructive-foreground: var(--cream);
+
+  --success: #3f6b4a;
+  --warning: #a0742a;
+
+  --border: #e4dbc6;
+  --input: #e4dbc6;
+  --ring: var(--gold);
+
+  --sidebar: var(--navy);
+  --sidebar-foreground: var(--cream);
+  --sidebar-accent: var(--navy-light);
+  --sidebar-accent-foreground: var(--gold-soft);
+  --sidebar-border: #1c2f4f;
+}
+
+.dark {
+  --background: #0a1120;
+  --foreground: #f2ecdd;
+
+  --card: #101c30;
+  --card-foreground: #f2ecdd;
+
+  --popover: #101c30;
+  --popover-foreground: #f2ecdd;
+
+  --primary: var(--gold-soft);
+  --primary-foreground: #0a1120;
+
+  --secondary: #16233a;
+  --secondary-foreground: #f2ecdd;
+
+  --muted: #16233a;
+  --muted-foreground: #a8a094;
+
+  --accent: var(--gold);
+  --accent-foreground: #0a1120;
+
+  --destructive: #c85c50;
+  --destructive-foreground: #0a1120;
+
+  --success: #6fae7f;
+  --warning: #d8ac52;
+
+  --border: #1e2c46;
+  --input: #1e2c46;
+  --ring: var(--gold);
+
+  --sidebar: #060c18;
+  --sidebar-foreground: #f2ecdd;
+  --sidebar-accent: #101c30;
+  --sidebar-accent-foreground: var(--gold-soft);
+  --sidebar-border: #101c30;
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-fraunces);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-navy: var(--navy);
+  --color-coffee: var(--coffee);
+  --color-walnut: var(--walnut);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "cv11", "ss01";
+  }
+}
+
+/* Subtle glass effect reserved for elevated surfaces (modals, command bar) */
+.glass-panel {
+  background: color-mix(in oklab, var(--card) 72%, transparent);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
+}

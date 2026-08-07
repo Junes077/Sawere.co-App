@@ -1,0 +1,645 @@
+// Sawere & Company Advocates — Legal Operating System
+// Multi-tenant data model. Every business entity is scoped to a Firm so the
+// same schema can serve a single firm today and a multi-firm SaaS tomorrow.
+// Row-level security mirrors this scoping in Postgres (see supabase/rls.sql).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Tenancy & Identity
+// ---------------------------------------------------------------------------
+
+model Firm {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  logoUrl   String?
+  address   String?
+  phone     String?
+  email     String?
+  website   String?
+
+  // Firm-wide preferences (language, timezone, invoice numbering, etc.)
+  settings  Json     @default("{}")
+
+  plan      FirmPlan @default(SOLO)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users            User[]
+  clients          Client[]
+  cases            Case[]
+  documents        Document[]
+  documentFolders  DocumentFolder[]
+  calendarEvents   CalendarEvent[]
+  meetings         Meeting[]
+  tasks            Task[]
+  invoices         Invoice[]
+  expenses         Expense[]
+  aiConversations  AiConversation[]
+  auditLogs        AuditLog[]
+  writingSamples   WritingStyleSample[]
+  documentTemplates DocumentTemplate[]
+  legalResearchNotes LegalResearchNote[]
+
+  @@map("firms")
+}
+
+enum FirmPlan {
+  SOLO
+  TEAM
+  ENTERPRISE
+}
+
+/// A staff member / advocate. Primary key mirrors the Supabase Auth user id
+/// (auth.users.id) so RLS policies can key off auth.uid() directly.
+model User {
+  id           String   @id
+  firmId       String
+  email        String   @unique
+  fullName     String
+  phone        String?
+  avatarUrl    String?
+  role         UserRole @default(ADVOCATE)
+  title        String? // e.g. "Managing Partner", "Associate"
+  barNumber    String?
+
+  twoFactorEnabled Boolean @default(false)
+  biometricEnabled Boolean @default(false)
+  lastLoginAt      DateTime?
+  sessionTimeoutMinutes Int @default(30)
+  /// Language, notification and backup preferences, e.g.
+  /// { "language": "en", "notifications": { "email": true, "push": true, "desktop": true } }
+  preferences      Json    @default("{}")
+
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  firm             Firm             @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  casesAsAdvocate  Case[]           @relation("CaseAdvocate")
+  tasksAssigned    Task[]           @relation("TaskAssignee")
+  tasksCreated     Task[]           @relation("TaskCreator")
+  meetings         Meeting[]        @relation("MeetingHost")
+  auditLogs        AuditLog[]
+  aiConversations  AiConversation[]
+  documentsUploaded Document[]      @relation("DocumentUploader")
+  notes            CaseNote[]
+
+  @@index([firmId])
+  @@map("users")
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  ADVOCATE
+  PARALEGAL
+  STAFF
+}
+
+// ---------------------------------------------------------------------------
+// Clients
+// ---------------------------------------------------------------------------
+
+model Client {
+  id            String   @id @default(uuid())
+  firmId        String
+  fullName      String
+  clientType    ClientType @default(INDIVIDUAL)
+  companyName   String?
+  email         String?
+  phone         String?
+  address       String?
+  nationalId    String?
+  notes         String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  firm       Firm       @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  cases      Case[]
+  documents  Document[]
+  meetings   Meeting[]
+  invoices   Invoice[]
+  calendarEvents CalendarEvent[]
+  tasks      Task[]
+
+  @@index([firmId])
+  @@index([firmId, fullName])
+  @@map("clients")
+}
+
+enum ClientType {
+  INDIVIDUAL
+  COMPANY
+  GOVERNMENT
+  NGO
+}
+
+// ---------------------------------------------------------------------------
+// Cases
+// ---------------------------------------------------------------------------
+
+model Case {
+  id           String     @id @default(uuid())
+  firmId       String
+  clientId     String
+  caseNumber   String
+  title        String
+  caseType     String
+  status       CaseStatus @default(OPEN)
+  court        String?
+  judge        String?
+  opposingParty String?
+  advocateId   String?
+  aiSummary    String?
+
+  filedAt      DateTime?
+  closedAt     DateTime?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  firm       Firm       @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  client     Client     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  advocate   User?      @relation("CaseAdvocate", fields: [advocateId], references: [id])
+
+  documents      Document[]
+  calendarEvents CalendarEvent[]
+  meetings       Meeting[]
+  tasks          Task[]
+  notes          CaseNote[]
+  deadlines      CaseDeadline[]
+
+  @@unique([firmId, caseNumber])
+  @@index([firmId, status])
+  @@index([clientId])
+  @@map("cases")
+}
+
+enum CaseStatus {
+  OPEN
+  IN_PROGRESS
+  ON_HOLD
+  WON
+  LOST
+  SETTLED
+  CLOSED
+}
+
+model CaseNote {
+  id        String   @id @default(uuid())
+  caseId    String
+  authorId  String
+  body      String
+  createdAt DateTime @default(now())
+
+  case   Case @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id])
+
+  @@index([caseId])
+  @@map("case_notes")
+}
+
+model CaseDeadline {
+  id          String   @id @default(uuid())
+  caseId      String
+  title       String
+  dueAt       DateTime
+  isCompleted Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  case Case @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId, dueAt])
+  @@map("case_deadlines")
+}
+
+// ---------------------------------------------------------------------------
+// Documents & AI Document Brain
+// ---------------------------------------------------------------------------
+
+/// A folder the advocate has explicitly opted in to let the AI index.
+/// Nothing outside these folders is ever scanned.
+model DocumentFolder {
+  id           String   @id @default(uuid())
+  firmId       String
+  label        String
+  path         String
+  isIndexed    Boolean  @default(false)
+  lastIndexedAt DateTime?
+  createdAt    DateTime @default(now())
+
+  firm Firm @relation(fields: [firmId], references: [id], onDelete: Cascade)
+
+  @@index([firmId])
+  @@map("document_folders")
+}
+
+model Document {
+  id           String       @id @default(uuid())
+  firmId       String
+  clientId     String?
+  caseId       String?
+  uploadedById String?
+
+  fileName     String
+  storagePath  String // Supabase Storage object path
+  mimeType     String
+  sizeBytes    Int
+  category     DocumentCategory @default(OTHER)
+
+  aiSummary    String?
+  aiTags       String[]     @default([])
+  extractedText String?     // OCR / parsed text for search
+
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  firm       Firm    @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  client     Client? @relation(fields: [clientId], references: [id])
+  case       Case?   @relation(fields: [caseId], references: [id])
+  uploadedBy User?   @relation("DocumentUploader", fields: [uploadedById], references: [id])
+
+  @@index([firmId])
+  @@index([clientId])
+  @@index([caseId])
+  @@map("documents")
+}
+
+enum DocumentCategory {
+  CONTRACT
+  COURT_FILING
+  EVIDENCE
+  CORRESPONDENCE
+  INVOICE
+  ID_DOCUMENT
+  AFFIDAVIT
+  OTHER
+}
+
+/// Past documents an advocate has approved for the AI to learn writing
+/// style (tone, structure, greetings, closings) from.
+model WritingStyleSample {
+  id        String   @id @default(uuid())
+  firmId    String
+  label     String
+  storagePath String
+  createdAt DateTime @default(now())
+
+  firm Firm @relation(fields: [firmId], references: [id], onDelete: Cascade)
+
+  @@index([firmId])
+  @@map("writing_style_samples")
+}
+
+model DocumentTemplate {
+  id          String   @id @default(uuid())
+  firmId      String
+  name        String
+  category    String // Contract, Letter, Demand Notice, Affidavit, ...
+  bodyMarkdown String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  firm Firm @relation(fields: [firmId], references: [id], onDelete: Cascade)
+
+  @@index([firmId])
+  @@map("document_templates")
+}
+
+// ---------------------------------------------------------------------------
+// Calendar
+// ---------------------------------------------------------------------------
+
+model CalendarEvent {
+  id          String       @id @default(uuid())
+  firmId      String
+  clientId    String?
+  caseId      String?
+  title       String
+  description String?
+  type        EventType    @default(OTHER)
+  startsAt    DateTime
+  endsAt      DateTime?
+  location    String?
+  reminders   Int[]        @default([1440, 60]) // minutes before, e.g. 1 day + 1 hour
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  firm   Firm    @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  client Client? @relation(fields: [clientId], references: [id])
+  case   Case?   @relation(fields: [caseId], references: [id])
+
+  @@index([firmId, startsAt])
+  @@map("calendar_events")
+}
+
+enum EventType {
+  COURT_DATE
+  MEETING
+  DEADLINE
+  EXPIRY_REMINDER
+  OTHER
+}
+
+// ---------------------------------------------------------------------------
+// Meetings, Recordings & Transcripts (AI Meeting Recorder)
+// ---------------------------------------------------------------------------
+
+model Meeting {
+  id         String   @id @default(uuid())
+  firmId     String
+  clientId   String?
+  caseId     String?
+  hostId     String?
+  title      String
+  type       MeetingType @default(CLIENT_MEETING)
+  startedAt  DateTime  @default(now())
+  endedAt    DateTime?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  firm      Firm       @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  client    Client?    @relation(fields: [clientId], references: [id])
+  case      Case?      @relation(fields: [caseId], references: [id])
+  host      User?      @relation("MeetingHost", fields: [hostId], references: [id])
+  recording Recording?
+
+  @@index([firmId])
+  @@index([clientId])
+  @@map("meetings")
+}
+
+enum MeetingType {
+  CLIENT_MEETING
+  PHONE_NOTE
+  VOICE_MEMO
+  COURT_APPEARANCE
+}
+
+model Recording {
+  id            String   @id @default(uuid())
+  meetingId     String   @unique
+  storagePath   String
+  durationSeconds Int?
+  status        RecordingStatus @default(RECORDED)
+
+  transcript    Transcript?
+
+  createdAt     DateTime @default(now())
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@map("recordings")
+}
+
+enum RecordingStatus {
+  RECORDED
+  TRANSCRIBING
+  TRANSCRIBED
+  FAILED
+}
+
+model Transcript {
+  id           String   @id @default(uuid())
+  recordingId  String   @unique
+  text         String
+  summary      String?
+  actionItems  String[] @default([])
+  createdAt    DateTime @default(now())
+
+  recording Recording @relation(fields: [recordingId], references: [id], onDelete: Cascade)
+
+  @@map("transcripts")
+}
+
+// ---------------------------------------------------------------------------
+// Tasks
+// ---------------------------------------------------------------------------
+
+model Task {
+  id           String       @id @default(uuid())
+  firmId       String
+  clientId     String?
+  caseId       String?
+  assigneeId   String?
+  createdById  String?
+
+  title        String
+  description  String?
+  status       TaskStatus   @default(PENDING)
+  priority     TaskPriority @default(MEDIUM)
+  aiPriorityScore Int?      // 0-100, AI-suggested urgency
+  dueAt        DateTime?
+  completedAt  DateTime?
+
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  firm     Firm    @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  client   Client? @relation(fields: [clientId], references: [id])
+  case     Case?   @relation(fields: [caseId], references: [id])
+  assignee User?   @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  createdBy User?  @relation("TaskCreator", fields: [createdById], references: [id])
+
+  @@index([firmId, status])
+  @@index([assigneeId])
+  @@map("tasks")
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+// ---------------------------------------------------------------------------
+// Billing: Invoices, Payments, Expenses
+// ---------------------------------------------------------------------------
+
+model Invoice {
+  id           String        @id @default(uuid())
+  firmId       String
+  clientId     String
+  invoiceNumber String
+  status       InvoiceStatus @default(DRAFT)
+  currency     String        @default("KES")
+  issueDate    DateTime      @default(now())
+  dueDate      DateTime?
+  subtotal     Decimal       @db.Decimal(14, 2)
+  taxAmount    Decimal       @default(0) @db.Decimal(14, 2)
+  total        Decimal       @db.Decimal(14, 2)
+  notes        String?
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  firm   Firm          @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  client Client        @relation(fields: [clientId], references: [id])
+  items  InvoiceItem[]
+  payments Payment[]
+
+  @@unique([firmId, invoiceNumber])
+  @@index([firmId, status])
+  @@map("invoices")
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  VOID
+}
+
+model InvoiceItem {
+  id          String  @id @default(uuid())
+  invoiceId   String
+  description String
+  quantity    Decimal @default(1) @db.Decimal(10, 2)
+  unitPrice   Decimal @db.Decimal(14, 2)
+  amount      Decimal @db.Decimal(14, 2)
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@map("invoice_items")
+}
+
+model Payment {
+  id          String        @id @default(uuid())
+  invoiceId   String
+  amount      Decimal       @db.Decimal(14, 2)
+  method      PaymentMethod @default(BANK_TRANSFER)
+  reference   String?
+  paidAt      DateTime      @default(now())
+  createdAt   DateTime      @default(now())
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@map("payments")
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  MOBILE_MONEY
+  CARD
+  CHEQUE
+  OTHER
+}
+
+model Expense {
+  id          String   @id @default(uuid())
+  firmId      String
+  category    String
+  description String
+  amount      Decimal  @db.Decimal(14, 2)
+  incurredAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  firm Firm @relation(fields: [firmId], references: [id], onDelete: Cascade)
+
+  @@index([firmId, incurredAt])
+  @@map("expenses")
+}
+
+// ---------------------------------------------------------------------------
+// AI Assistant
+// ---------------------------------------------------------------------------
+
+model AiConversation {
+  id        String   @id @default(uuid())
+  firmId    String
+  userId    String
+  title     String   @default("New conversation")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  firm     Firm       @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages AiMessage[]
+
+  @@index([firmId, userId])
+  @@map("ai_conversations")
+}
+
+model AiMessage {
+  id             String   @id @default(uuid())
+  conversationId String
+  role           AiMessageRole
+  content        String
+  createdAt      DateTime @default(now())
+
+  conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@map("ai_messages")
+}
+
+enum AiMessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+/// Extension point for the AI Legal Research module: saved judgments,
+/// tracked updates and summaries an advocate has pinned.
+model LegalResearchNote {
+  id          String   @id @default(uuid())
+  firmId      String
+  title       String
+  sourceUrl   String?
+  jurisdiction String?
+  summary     String?
+  createdAt   DateTime @default(now())
+
+  firm Firm @relation(fields: [firmId], references: [id], onDelete: Cascade)
+
+  @@index([firmId])
+  @@map("legal_research_notes")
+}
+
+// ---------------------------------------------------------------------------
+// Security & Audit
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  firmId     String
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json     @default("{}")
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  firm Firm  @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([firmId, createdAt])
+  @@map("audit_logs")
+}

@@ -1,0 +1,38 @@
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+export function formatCurrency(amount: number | string, currency = "KES") {
+  const value = typeof amount === "string" ? Number(amount) : amount;
+  return new Intl.NumberFormat("en-KE", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+export function formatDate(date: Date | string, opts?: Intl.DateTimeFormatOptions) {
+  const d = typeof date === "string" ? new Date(date) : date;
+  return new Intl.DateTimeFormat("en-KE", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    ...opts,
+  }).format(d);
+}
+
+export function formatDateTime(date: Date | string) {
+  return formatDate(date, { hour: "2-digit", minute: "2-digit" });
+}
+
+export function initials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+}

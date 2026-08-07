@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseJsClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { getSupabaseEnv } from "@/lib/supabase/env";
 
 /**
  * Server-side Supabase client for use in Server Components, Route Handlers,
@@ -8,29 +9,26 @@ import { cookies } from "next/headers";
  */
 export async function createClient() {
   const cookieStore = await cookies();
+  const { url, anonKey } = getSupabaseEnv();
 
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options),
-            );
-          } catch {
-            // Called from a Server Component with no request context to write
-            // cookies to — safe to ignore because middleware refreshes the
-            // session on every request.
-          }
-        },
+  return createServerClient(url, anonKey, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options),
+          );
+        } catch {
+          // Called from a Server Component with no request context to write
+          // cookies to — safe to ignore because middleware refreshes the
+          // session on every request.
+        }
       },
     },
-  );
+  });
 }
 
 /**
@@ -38,9 +36,15 @@ export async function createClient() {
  * only use in trusted server-side code paths (never expose to the client).
  */
 export function createAdminClient() {
-  return createSupabaseJsClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } },
-  );
+  const { url } = getSupabaseEnv();
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceRoleKey) {
+    throw new Error(
+      "Supabase is not configured: set SUPABASE_SERVICE_ROLE_KEY (see .env.example).",
+    );
+  }
+
+  return createSupabaseJsClient(url, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
 }

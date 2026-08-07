@@ -51,11 +51,13 @@ Open [http://localhost:3000](http://localhost:3000). You'll land on `/login`; us
    (`DATABASE_URL`, `DIRECT_URL`).
 2. Run `npm run db:push` to create the schema (or `npm run db:migrate` once you
    want tracked migrations).
-3. Run `supabase/storage.sql` in the SQL editor to create the private
-   `documents` bucket and its access policies.
-4. Run `supabase/rls.sql` to enable Row Level Security as defense-in-depth
-   (the app itself talks to Postgres via Prisma's direct connection, which
-   bypasses RLS — this is a backstop, not the primary authorization layer).
+3. Run `npm run db:sql -- supabase/storage.sql` to create the private
+   `documents` bucket and its access policies (or paste the file into the
+   Supabase SQL editor if you prefer the dashboard).
+4. Run `npm run db:sql -- supabase/rls.sql` to enable Row Level Security as
+   defense-in-depth (the app itself talks to Postgres via Prisma's direct
+   connection, which bypasses RLS — this is a backstop, not the primary
+   authorization layer).
 5. Enable Email auth, and optionally Google/Microsoft (Azure) OAuth, under
    Authentication → Providers. Set `NEXT_PUBLIC_GOOGLE_LOGIN_ENABLED=true`
    / `NEXT_PUBLIC_MICROSOFT_LOGIN_ENABLED=true` once configured.

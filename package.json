@@ -12,6 +12,7 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
+    "db:sql": "node --env-file=.env.local scripts/run-sql.mjs",
     "build:desktop": "cross-env BUILD_TARGET=desktop next build",
     "tauri": "tauri",
     "desktop:dev": "tauri dev",
@@ -61,11 +62,13 @@
     "@tailwindcss/postcss": "^4",
     "@tauri-apps/cli": "^2.11.4",
     "@types/node": "^20",
+    "@types/pg": "^8.20.4",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "cross-env": "^10.1.0",
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
+    "pg": "^8.22.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

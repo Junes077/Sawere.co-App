@@ -8,10 +8,17 @@ webview. So the desktop shell runs the real Next.js server as a background
 process and points its window at `http://localhost:3000`, the same way you'd
 run it on a normal machine — Tauri just makes it double-clickable and native.
 
-`next.config.ts` sets `output: "standalone"`, so `npm run build` produces
+`npm run build:desktop` sets `BUILD_TARGET=desktop`, which flips on
+`output: "standalone"` in `next.config.ts` for that build only — it produces
 `.next/standalone/server.js`: a self-contained Node server bundle (its own
 minimal `node_modules`) that only needs a `node` binary and your `.env`
 alongside it to run.
+
+This is deliberately **not** the default `npm run build`: Vercel does its
+own serverless bundling and the build fails if `output: "standalone"` is
+set for a Vercel deployment (it looks for trace files that standalone mode
+doesn't produce in the layout Vercel expects). Keep `output: "standalone"`
+opt-in behind `BUILD_TARGET=desktop` — never make it the default.
 
 ## Prerequisites
 
@@ -32,7 +39,7 @@ pointed at your local dev server — same hot-reload as the browser.
 ## Building an installer
 
 ```bash
-npm run build              # produces .next/standalone
+npm run build:desktop      # produces .next/standalone
 npm run desktop:build      # bundles Tauri + spawns the standalone server
 ```
 

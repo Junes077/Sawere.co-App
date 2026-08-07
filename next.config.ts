@@ -1,11 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Produces a self-contained .next/standalone server (with its own
-  // node_modules subset) so the Windows desktop shell can bundle and spawn
-  // it as a sidecar process instead of requiring a separate `npm install`.
-  // See docs/DESKTOP.md.
-  output: "standalone",
+  // Standalone output is only for the Tauri desktop shell, which bundles
+  // .next/standalone as a sidecar server (see docs/DESKTOP.md, `npm run
+  // build:desktop`). Vercel does its own serverless bundling and breaks if
+  // "standalone" is set — https://github.com/vercel/next.js/discussions
+  // cover this — so it must stay opt-in via BUILD_TARGET, never the default.
+  ...(process.env.BUILD_TARGET === "desktop" ? { output: "standalone" as const } : {}),
 };
 
 export default nextConfig;

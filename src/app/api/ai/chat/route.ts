@@ -19,53 +19,66 @@ export async function POST(request: Request) {
     return new Response(JSON.stringify({ error: "Message is required" }), { status: 400 });
   }
 
-  const conversation = conversationId
-    ? await prisma.aiConversation.findFirst({
-        where: { id: conversationId, firmId: user.firmId, userId: user.id },
-        include: { messages: { orderBy: { createdAt: "asc" }, take: 30 } },
-      })
-    : await prisma.aiConversation.create({
-        data: { firmId: user.firmId, userId: user.id },
-        include: { messages: true },
-      });
-
-  if (!conversation) {
-    return new Response(JSON.stringify({ error: "Conversation not found" }), { status: 404 });
-  }
-
-  await prisma.aiMessage.create({
-    data: { conversationId: conversation.id, role: "USER", content: userMessage },
-  });
-
-  if (conversation.messages.length === 0) {
-    await prisma.aiConversation.update({
-      where: { id: conversation.id },
-      data: { title: userMessage.slice(0, 60) },
-    });
-  }
-
+  let conversation;
   let claude;
+  let firmContext: string;
   try {
+    conversation = conversationId
+      ? await prisma.aiConversation.findFirst({
+          where: { id: conversationId, firmId: user.firmId, userId: user.id },
+          include: { messages: { orderBy: { createdAt: "asc" }, take: 30 } },
+        })
+      : await prisma.aiConversation.create({
+          data: { firmId: user.firmId, userId: user.id },
+          include: { messages: true },
+        });
+
+    if (!conversation) {
+      return new Response(JSON.stringify({ error: "Conversation not found" }), { status: 404 });
+    }
+
+    await prisma.aiMessage.create({
+      data: { conversationId: conversation.id, role: "USER", content: userMessage },
+    });
+
+    if (conversation.messages.length === 0) {
+      await prisma.aiConversation.update({
+        where: { id: conversation.id },
+        data: { title: userMessage.slice(0, 60) },
+      });
+    }
+
     claude = getClaudeClient();
-  } catch {
-    return new Response(
-      JSON.stringify({ error: "AI is not configured yet. Add ANTHROPIC_API_KEY to enable the assistant." }),
-      { status: 503 },
-    );
+    firmContext = await buildFirmContext(user.firmId);
+  } catch (err) {
+    console.error("AI chat setup failed", err);
+    const message =
+      err instanceof Error && err.message.includes("ANTHROPIC_API_KEY")
+        ? "AI is not configured yet. Add ANTHROPIC_API_KEY to enable the assistant."
+        : err instanceof Error
+          ? err.message
+          : "Something went wrong preparing the assistant.";
+    return new Response(JSON.stringify({ error: message }), { status: 500 });
   }
 
-  const firmContext = await buildFirmContext(user.firmId);
   const history = conversation.messages.map((m) => ({
     role: m.role === "ASSISTANT" ? ("assistant" as const) : ("user" as const),
     content: m.content,
   }));
 
-  const stream = claude.messages.stream({
-    model: CLAUDE_MODEL,
-    max_tokens: 1024,
-    system: `${LEGAL_ASSISTANT_SYSTEM_PROMPT}\n\n${firmContext}`,
-    messages: [...history, { role: "user", content: userMessage }],
-  });
+  let stream;
+  try {
+    stream = claude.messages.stream({
+      model: CLAUDE_MODEL,
+      max_tokens: 1024,
+      system: `${LEGAL_ASSISTANT_SYSTEM_PROMPT}\n\n${firmContext}`,
+      messages: [...history, { role: "user", content: userMessage }],
+    });
+  } catch (err) {
+    console.error("Claude stream setup failed", err);
+    const message = err instanceof Error ? err.message : "The assistant couldn't respond.";
+    return new Response(JSON.stringify({ error: message }), { status: 502 });
+  }
 
   let fullText = "";
   const encoder = new TextEncoder();

@@ -21,7 +21,7 @@ export default async function DashboardPage() {
   return (
     <div>
       <PageHeader
-        title={dict.dashboard.greeting(user.fullName.split(" ")[0])}
+        title={dict.dashboard.greeting.replace("{name}", user.fullName.split(" ")[0])}
         description={dict.dashboard.subtitle}
       />
 

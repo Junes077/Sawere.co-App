@@ -31,7 +31,7 @@ export const en = {
     profile: "Profile",
   },
   dashboard: {
-    greeting: (name: string) => `Good to see you, ${name}`,
+    greeting: "Good to see you, {name}",
     subtitle: "Here's what's happening across the firm today.",
     activeClients: "Active clients",
     openCases: "Open cases",

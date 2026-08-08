@@ -33,7 +33,7 @@ export const sw: Dictionary = {
     profile: "Wasifu",
   },
   dashboard: {
-    greeting: (name: string) => `Karibu tena, ${name}`,
+    greeting: "Karibu tena, {name}",
     subtitle: "Haya ndiyo yanayoendelea katika kampuni leo.",
     activeClients: "Wateja hai",
     openCases: "Mashauri yaliyo wazi",

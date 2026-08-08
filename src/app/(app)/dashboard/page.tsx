@@ -11,24 +11,26 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/empty-state";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
+import { getDictionary, getUserLocale } from "@/lib/i18n";
 
 export default async function DashboardPage() {
   const user = await requireUser();
   const stats = await getDashboardStats(user.firmId);
+  const dict = getDictionary(getUserLocale(user.preferences));
 
   return (
     <div>
       <PageHeader
-        title={`Good to see you, ${user.fullName.split(" ")[0]}`}
-        description="Here's what's happening across the firm today."
+        title={dict.dashboard.greeting(user.fullName.split(" ")[0])}
+        description={dict.dashboard.subtitle}
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Active clients" value={String(stats.clientCount)} icon={Users} />
-        <StatCard label="Open cases" value={String(stats.openCaseCount)} icon={Briefcase} accent />
-        <StatCard label="Pending tasks" value={String(stats.pendingTaskCount)} icon={ListChecks} />
+        <StatCard label={dict.dashboard.activeClients} value={String(stats.clientCount)} icon={Users} />
+        <StatCard label={dict.dashboard.openCases} value={String(stats.openCaseCount)} icon={Briefcase} accent />
+        <StatCard label={dict.dashboard.pendingTasks} value={String(stats.pendingTaskCount)} icon={ListChecks} />
         <StatCard
-          label="Outstanding invoices"
+          label={dict.dashboard.outstandingInvoices}
           value={formatCurrency(stats.unpaidTotal)}
           icon={Receipt}
           hint={`${stats.unpaidCount} invoice${stats.unpaidCount === 1 ? "" : "s"} unpaid`}
@@ -38,7 +40,7 @@ export default async function DashboardPage() {
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Revenue, last 6 months</CardTitle>
+            <CardTitle>{dict.dashboard.revenueTitle}</CardTitle>
           </CardHeader>
           <CardContent>
             <RevenueChart data={stats.revenueByMonth} />
@@ -47,7 +49,7 @@ export default async function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Case pipeline</CardTitle>
+            <CardTitle>{dict.dashboard.casePipeline}</CardTitle>
           </CardHeader>
           <CardContent>
             {stats.casesByStatus.length > 0 ? (
@@ -62,10 +64,10 @@ export default async function DashboardPage() {
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Upcoming</CardTitle>
+            <CardTitle>{dict.dashboard.upcoming}</CardTitle>
             <Button variant="ghost" size="sm" asChild>
               <Link href="/calendar">
-                View calendar <ArrowRight />
+                {dict.dashboard.viewCalendar} <ArrowRight />
               </Link>
             </Button>
           </CardHeader>
@@ -73,8 +75,8 @@ export default async function DashboardPage() {
             {stats.upcomingEvents.length === 0 ? (
               <EmptyState
                 icon={CalendarClock}
-                title="Nothing scheduled"
-                description="Court dates, meetings and deadlines will show up here."
+                title={dict.dashboard.nothingScheduled}
+                description={dict.dashboard.nothingScheduledDesc}
               />
             ) : (
               <ul className="flex flex-col gap-3">
@@ -105,16 +107,16 @@ export default async function DashboardPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Priority tasks</CardTitle>
+            <CardTitle>{dict.dashboard.priorityTasks}</CardTitle>
             <Button variant="ghost" size="sm" asChild>
               <Link href="/tasks">
-                View all <ArrowRight />
+                {dict.dashboard.viewAll} <ArrowRight />
               </Link>
             </Button>
           </CardHeader>
           <CardContent>
             {stats.recentTasks.length === 0 ? (
-              <EmptyState icon={ListChecks} title="You're all caught up" description="No pending tasks right now." />
+              <EmptyState icon={ListChecks} title={dict.dashboard.allCaughtUp} description={dict.dashboard.allCaughtUpDesc} />
             ) : (
               <ul className="flex flex-col gap-3">
                 {stats.recentTasks.map((task) => (

@@ -7,9 +7,11 @@ import { NoteFormDialog } from "@/components/legal-research/note-form-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
+import { getDictionary, getUserLocale } from "@/lib/i18n";
 
 export default async function LegalResearchPage() {
   const user = await requireUser();
+  const dict = getDictionary(getUserLocale(user.preferences));
   const notes = await prisma.legalResearchNote.findMany({
     where: { firmId: user.firmId },
     orderBy: { createdAt: "desc" },
@@ -18,8 +20,8 @@ export default async function LegalResearchPage() {
   return (
     <div>
       <PageHeader
-        title="Legal Research"
-        description="Pin judgments, statutes and principles your team relies on."
+        title={dict.pages.legalResearch.title}
+        description={dict.pages.legalResearch.description}
         actions={<NoteFormDialog />}
       />
 

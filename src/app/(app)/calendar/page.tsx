@@ -17,6 +17,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { CalendarGrid } from "@/components/calendar/calendar-grid";
 import { EventFormDialog } from "@/components/calendar/event-form-dialog";
 import { Button } from "@/components/ui/button";
+import { getDictionary, getUserLocale } from "@/lib/i18n";
 
 export default async function CalendarPage({
   searchParams,
@@ -25,6 +26,7 @@ export default async function CalendarPage({
 }) {
   const user = await requireUser();
   const { month } = await searchParams;
+  const dict = getDictionary(getUserLocale(user.preferences));
 
   const anchor = month ? new Date(`${month}-01T00:00:00`) : new Date();
   const monthStart = startOfMonth(anchor);
@@ -52,8 +54,8 @@ export default async function CalendarPage({
   return (
     <div>
       <PageHeader
-        title="Calendar"
-        description="Court dates, meetings and deadlines — with automatic reminders."
+        title={dict.pages.calendar.title}
+        description={dict.pages.calendar.description}
         actions={<EventFormDialog clients={clients} cases={cases} />}
       />
 

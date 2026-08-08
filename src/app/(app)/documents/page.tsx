@@ -8,6 +8,7 @@ import { UploadDocumentDialog } from "@/components/documents/upload-dialog";
 import { DocumentsList } from "@/components/documents/documents-list";
 import { DocumentFoldersPanel } from "@/components/documents/document-folders-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getDictionary, getUserLocale } from "@/lib/i18n";
 
 export default async function DocumentsPage({
   searchParams,
@@ -16,6 +17,7 @@ export default async function DocumentsPage({
 }) {
   const user = await requireUser();
   const { q } = await searchParams;
+  const dict = getDictionary(getUserLocale(user.preferences));
 
   const [documents, folders, clients, cases] = await Promise.all([
     listDocuments(user.firmId, { search: q }),
@@ -27,8 +29,8 @@ export default async function DocumentsPage({
   return (
     <div>
       <PageHeader
-        title="Documents"
-        description="Contracts, filings, evidence and correspondence — all searchable in one vault."
+        title={dict.pages.documents.title}
+        description={dict.pages.documents.description}
         actions={<UploadDocumentDialog firmId={user.firmId} clients={clients} cases={cases} />}
       />
 

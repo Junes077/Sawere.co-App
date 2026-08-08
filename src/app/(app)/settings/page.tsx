@@ -4,14 +4,17 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { FirmForm } from "@/components/settings/firm-form";
+import { BrandingForm } from "@/components/settings/branding-form";
 import { SecurityPanel } from "@/components/settings/security-panel";
 import { PreferencesForm } from "@/components/settings/preferences-form";
 import { BackupCard } from "@/components/settings/backup-card";
 import { AuditLogTable } from "@/components/settings/audit-log-table";
 import { IntegrationsPanel } from "@/components/settings/integrations-panel";
+import { getDictionary, getUserLocale } from "@/lib/i18n";
 
 export default async function SettingsPage() {
   const user = await requireUser();
+  const dict = getDictionary(getUserLocale(user.preferences));
 
   const [firm, auditLogs] = await Promise.all([
     prisma.firm.findUniqueOrThrow({ where: { id: user.firmId } }),
@@ -25,24 +28,25 @@ export default async function SettingsPage() {
 
   return (
     <div>
-      <PageHeader title="Settings" description="Your profile, firm, security and preferences." />
+      <PageHeader title={dict.pages.settings.title} description={dict.pages.settings.description} />
 
       <Tabs defaultValue="profile">
         <TabsList>
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="firm">Firm</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="preferences">Preferences</TabsTrigger>
-          <TabsTrigger value="integrations">Integrations</TabsTrigger>
-          <TabsTrigger value="backup">Backup</TabsTrigger>
-          <TabsTrigger value="audit">Audit log</TabsTrigger>
+          <TabsTrigger value="profile">{dict.settingsTabs.profile}</TabsTrigger>
+          <TabsTrigger value="firm">{dict.settingsTabs.firm}</TabsTrigger>
+          <TabsTrigger value="security">{dict.settingsTabs.security}</TabsTrigger>
+          <TabsTrigger value="preferences">{dict.settingsTabs.preferences}</TabsTrigger>
+          <TabsTrigger value="integrations">{dict.settingsTabs.integrations}</TabsTrigger>
+          <TabsTrigger value="backup">{dict.settingsTabs.backup}</TabsTrigger>
+          <TabsTrigger value="audit">{dict.settingsTabs.audit}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="mt-4 max-w-2xl">
           <ProfileForm user={user} />
         </TabsContent>
-        <TabsContent value="firm" className="mt-4 max-w-2xl">
+        <TabsContent value="firm" className="mt-4 flex max-w-2xl flex-col gap-4">
           <FirmForm firm={firm} editable={["OWNER", "ADMIN"].includes(user.role)} />
+          {["OWNER", "ADMIN"].includes(user.role) && <BrandingForm firm={firm} />}
         </TabsContent>
         <TabsContent value="security" className="mt-4 max-w-2xl">
           <SecurityPanel user={user} />

@@ -9,9 +9,11 @@ import { MeetingFormDialog } from "@/components/meetings/meeting-form-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDateTime } from "@/lib/utils";
+import { getDictionary, getUserLocale } from "@/lib/i18n";
 
 export default async function MeetingsPage() {
   const user = await requireUser();
+  const dict = getDictionary(getUserLocale(user.preferences));
   const [meetings, clients, cases] = await Promise.all([
     listMeetings(user.firmId),
     listClients(user.firmId),
@@ -21,8 +23,8 @@ export default async function MeetingsPage() {
   return (
     <div>
       <PageHeader
-        title="Meetings"
-        description="Client meetings, phone notes and voice memos — organized per client."
+        title={dict.pages.meetings.title}
+        description={dict.pages.meetings.description}
         actions={<MeetingFormDialog clients={clients} cases={cases} />}
       />
 

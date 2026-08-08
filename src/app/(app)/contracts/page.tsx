@@ -9,9 +9,11 @@ import { GenerateDraftDialog } from "@/components/contracts/generate-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
+import { getDictionary, getUserLocale } from "@/lib/i18n";
 
 export default async function ContractsPage() {
   const user = await requireUser();
+  const dict = getDictionary(getUserLocale(user.preferences));
   const [templates, clients, cases] = await Promise.all([
     prisma.documentTemplate.findMany({ where: { firmId: user.firmId }, orderBy: { updatedAt: "desc" } }),
     listClients(user.firmId),
@@ -21,8 +23,8 @@ export default async function ContractsPage() {
   return (
     <div>
       <PageHeader
-        title="Contracts & Documents"
-        description="Draft contracts, letters, demand notices and more in your firm's own style."
+        title={dict.pages.contracts.title}
+        description={dict.pages.contracts.description}
         actions={
           <>
             <TemplateFormDialog />

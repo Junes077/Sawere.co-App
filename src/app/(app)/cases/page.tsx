@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import type { CaseStatus } from "@prisma/client";
 import { formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { getDictionary, getUserLocale } from "@/lib/i18n";
 
 const STATUS_FILTERS: { label: string; value?: CaseStatus }[] = [
   { label: "All" },
@@ -31,6 +32,7 @@ export default async function CasesPage({
 }) {
   const user = await requireUser();
   const { q, status } = await searchParams;
+  const dict = getDictionary(getUserLocale(user.preferences));
 
   const [cases, clients, advocates] = await Promise.all([
     listCases(user.firmId, { search: q, status: status as CaseStatus | undefined }),
@@ -41,8 +43,8 @@ export default async function CasesPage({
   return (
     <div>
       <PageHeader
-        title="Cases"
-        description="Track matters from filing to resolution."
+        title={dict.pages.cases.title}
+        description={dict.pages.cases.description}
         actions={<CaseFormDialog clients={clients} advocates={advocates} />}
       />
 

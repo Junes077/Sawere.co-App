@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { getDictionary, getUserLocale } from "@/lib/i18n";
 
 const STATUS_VARIANT: Record<string, "success" | "outline" | "destructive" | "warning"> = {
   PAID: "success",
@@ -22,6 +23,7 @@ const STATUS_VARIANT: Record<string, "success" | "outline" | "destructive" | "wa
 
 export default async function InvoicesPage() {
   const user = await requireUser();
+  const dict = getDictionary(getUserLocale(user.preferences));
   const [invoices, expenses, clients] = await Promise.all([
     listInvoices(user.firmId),
     listExpenses(user.firmId),
@@ -30,7 +32,7 @@ export default async function InvoicesPage() {
 
   return (
     <div>
-      <PageHeader title="Billing" description="Invoices, payments and firm expenses." />
+      <PageHeader title={dict.pages.invoices.title} description={dict.pages.invoices.description} />
 
       <Tabs defaultValue="invoices">
         <TabsList>

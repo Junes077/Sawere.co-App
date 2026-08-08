@@ -13,9 +13,11 @@ import {
   Settings,
   BookOpenText,
 } from "lucide-react";
+import type { Dictionary } from "@/lib/i18n";
 
 export interface NavItem {
-  label: string;
+  /** Key into dict.nav for the translated label. */
+  key: keyof Dictionary["nav"];
   href: string;
   icon: LucideIcon;
   /** Marks modules that ship as architected extension points, not yet fully live. */
@@ -23,21 +25,21 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Clients", href: "/clients", icon: Users },
-  { label: "Cases", href: "/cases", icon: Briefcase },
-  { label: "Documents", href: "/documents", icon: FileText },
-  { label: "Calendar", href: "/calendar", icon: Calendar },
-  { label: "Meetings", href: "/meetings", icon: Video },
-  { label: "Tasks", href: "/tasks", icon: ListChecks },
-  { label: "Legal Research", href: "/legal-research", icon: BookOpenText, comingSoon: true },
-  { label: "Contracts", href: "/contracts", icon: FileSignature },
-  { label: "Invoices", href: "/invoices", icon: Receipt },
-  { label: "AI Assistant", href: "/ai-assistant", icon: Sparkles },
+  { key: "dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { key: "clients", href: "/clients", icon: Users },
+  { key: "cases", href: "/cases", icon: Briefcase },
+  { key: "documents", href: "/documents", icon: FileText },
+  { key: "calendar", href: "/calendar", icon: Calendar },
+  { key: "meetings", href: "/meetings", icon: Video },
+  { key: "tasks", href: "/tasks", icon: ListChecks },
+  { key: "legalResearch", href: "/legal-research", icon: BookOpenText, comingSoon: true },
+  { key: "contracts", href: "/contracts", icon: FileSignature },
+  { key: "invoices", href: "/invoices", icon: Receipt },
+  { key: "aiAssistant", href: "/ai-assistant", icon: Sparkles },
 ];
 
 export const SETTINGS_NAV_ITEM: NavItem = {
-  label: "Settings",
+  key: "settings",
   href: "/settings",
   icon: Settings,
 };

@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { initials } from "@/lib/utils";
+import { getDictionary, getUserLocale } from "@/lib/i18n";
 
 async function ClientsList({ firmId, q }: { firmId: string; q?: string }) {
   const clients = await listClients(firmId, q);
@@ -79,12 +80,13 @@ export default async function ClientsPage({
 }) {
   const user = await requireUser();
   const { q } = await searchParams;
+  const dict = getDictionary(getUserLocale(user.preferences));
 
   return (
     <div>
       <PageHeader
-        title="Clients"
-        description="Every client, their cases, documents and history in one place."
+        title={dict.pages.clients.title}
+        description={dict.pages.clients.description}
         actions={<ClientFormDialog />}
       />
       <div className="mb-4">

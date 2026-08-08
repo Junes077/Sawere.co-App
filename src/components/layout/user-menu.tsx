@@ -14,17 +14,20 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { createClient } from "@/lib/supabase/client";
 import { initials } from "@/lib/utils";
+import type { Dictionary } from "@/lib/i18n";
 
 export function UserMenu({
   fullName,
   email,
   avatarUrl,
   title,
+  dict,
 }: {
   fullName: string;
   email: string;
   avatarUrl?: string | null;
   title?: string | null;
+  dict: Dictionary;
 }) {
   const router = useRouter();
 
@@ -52,19 +55,19 @@ export function UserMenu({
         <DropdownMenuItem asChild>
           <Link href="/settings">
             <UserRound />
-            Profile
+            {dict.common.profile}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/settings">
             <Settings />
-            Settings
+            {dict.nav.settings}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onSelect={handleSignOut}>
           <LogOut />
-          Sign out
+          {dict.common.signOut}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

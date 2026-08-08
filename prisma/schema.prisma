@@ -22,6 +22,7 @@ model Firm {
   name      String
   slug      String   @unique
   logoUrl   String?
+  officePhotoUrl String?
   address   String?
   phone     String?
   email     String?
@@ -105,6 +106,8 @@ enum UserRole {
   ADVOCATE
   PARALEGAL
   STAFF
+  RESEARCHER
+  READ_ONLY
 }
 
 // ---------------------------------------------------------------------------

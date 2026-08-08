@@ -2,12 +2,22 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Menu, Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
+import type { Dictionary } from "@/lib/i18n";
 
-export function MobileSidebar() {
+export function MobileSidebar({
+  firmName,
+  logoUrl,
+  dict,
+}: {
+  firmName: string;
+  logoUrl: string | null;
+  dict: Dictionary;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -21,14 +31,18 @@ export function MobileSidebar() {
       >
         <SheetHeader className="px-5 py-5">
           <Link href="/dashboard" className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
-            <span className="flex size-8 items-center justify-center rounded-md bg-gold/15 text-gold">
-              <Scale className="size-4.5" />
+            <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-gold/15 text-gold">
+              {logoUrl ? (
+                <Image src={logoUrl} alt={firmName} width={32} height={32} className="size-full object-cover" unoptimized />
+              ) : (
+                <Scale className="size-4.5" />
+              )}
             </span>
-            <SheetTitle className="text-sidebar-foreground">Sawere &amp; Co.</SheetTitle>
+            <SheetTitle className="truncate text-sidebar-foreground">{firmName}</SheetTitle>
           </Link>
         </SheetHeader>
         <div onClick={() => setOpen(false)}>
-          <SidebarNav />
+          <SidebarNav dict={dict} />
         </div>
       </SheetContent>
     </Sheet>

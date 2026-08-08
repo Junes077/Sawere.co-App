@@ -6,9 +6,11 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/shared/page-header";
 import { TaskFormDialog } from "@/components/tasks/task-form-dialog";
 import { TaskBoard } from "@/components/tasks/task-board";
+import { getDictionary, getUserLocale } from "@/lib/i18n";
 
 export default async function TasksPage() {
   const user = await requireUser();
+  const dict = getDictionary(getUserLocale(user.preferences));
 
   const [tasks, clients, cases, advocates] = await Promise.all([
     listTasks(user.firmId),
@@ -20,8 +22,8 @@ export default async function TasksPage() {
   return (
     <div>
       <PageHeader
-        title="Tasks"
-        description="Everything the firm needs to get done, prioritized."
+        title={dict.pages.tasks.title}
+        description={dict.pages.tasks.description}
         actions={<TaskFormDialog clients={clients} cases={cases} advocates={advocates} />}
       />
       <TaskBoard tasks={tasks} />

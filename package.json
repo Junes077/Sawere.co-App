@@ -13,6 +13,7 @@
     "db:migrate": "dotenv -e .env.local -- prisma migrate dev",
     "db:studio": "dotenv -e .env.local -- prisma studio",
     "db:sql": "node --env-file=.env.local scripts/run-sql.mjs",
+    "db:generate-sql": "prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > schema-setup.sql",
     "build:desktop": "cross-env BUILD_TARGET=desktop next build",
     "tauri": "tauri",
     "desktop:dev": "tauri dev",

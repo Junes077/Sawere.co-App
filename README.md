@@ -50,7 +50,12 @@ Open [http://localhost:3000](http://localhost:3000). You'll land on `/login`; us
    `SUPABASE_SERVICE_ROLE_KEY`) and its Postgres connection strings
    (`DATABASE_URL`, `DIRECT_URL`).
 2. Run `npm run db:push` to create the schema (or `npm run db:migrate` once you
-   want tracked migrations).
+   want tracked migrations). If your network blocks raw Postgres connections
+   (common on locked-down/managed devices — e.g. a university-enrolled
+   laptop) but you can still reach the Supabase dashboard, run
+   `npm run db:generate-sql` instead — it produces `schema-setup.sql`
+   entirely offline (no DB connection needed), which you paste into the
+   Supabase SQL Editor and run there over plain HTTPS.
 3. Run `npm run db:sql -- supabase/storage.sql` to create the private
    `documents` bucket and its access policies (or paste the file into the
    Supabase SQL editor if you prefer the dashboard).

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { MeetingFormDialog } from "@/components/meetings/meeting-form-dialog";
+import { RecordingButton } from "@/components/meetings/recording-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDateTime } from "@/lib/utils";
@@ -34,13 +35,12 @@ export default async function MeetingsPage() {
           <div className="text-sm">
             <p className="font-medium text-foreground">
               <Sparkles className="mr-1 inline size-3.5 text-gold" />
-              Recording &amp; AI transcription ship with the desktop app
+              Recording &amp; AI transcription
             </p>
             <p className="text-muted-foreground">
-              The advocate starts recording manually with a clear on-screen indicator; audio is
-              transcribed and summarized into action items automatically. The data model
-              (Recording, Transcript, action items) is already wired below — connect a
-              speech-to-text provider in the desktop shell to go live.
+              Hit Record on a meeting below with a clear on-screen indicator so everyone in the
+              room knows it&apos;s on. Audio is transcribed and summarized into action items
+              automatically once you stop.
             </p>
           </div>
         </CardContent>
@@ -53,9 +53,12 @@ export default async function MeetingsPage() {
           {meetings.map((m) => (
             <Card key={m.id}>
               <CardContent className="flex flex-col gap-2 p-4">
-                <div className="flex items-center justify-between">
-                  <p className="font-medium text-foreground">{m.title}</p>
-                  <Badge variant="outline">{m.type.replace("_", " ")}</Badge>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-foreground">{m.title}</p>
+                    <Badge variant="outline">{m.type.replace("_", " ")}</Badge>
+                  </div>
+                  <RecordingButton meetingId={m.id} firmId={user.firmId} recording={m.recording} />
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {formatDateTime(m.startedAt)}
@@ -67,6 +70,13 @@ export default async function MeetingsPage() {
                   <p className="rounded-md bg-secondary p-3 text-sm text-foreground/90">
                     {m.recording.transcript.summary}
                   </p>
+                )}
+                {!!m.recording?.transcript?.actionItems.length && (
+                  <ul className="ml-4 list-disc text-sm text-foreground/90">
+                    {m.recording.transcript.actionItems.map((item, i) => (
+                      <li key={i}>{item}</li>
+                    ))}
+                  </ul>
                 )}
               </CardContent>
             </Card>

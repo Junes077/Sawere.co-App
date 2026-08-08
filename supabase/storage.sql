@@ -81,3 +81,36 @@ create policy "Firm members can delete their branding assets"
     bucket_id = 'branding'
     and (storage.foldername(name))[1] = public.current_firm_id()
   );
+
+-- ---------------------------------------------------------------------------
+-- Meeting recordings — a private bucket, scoped like "documents":
+-- recordings/{firmId}/{meetingId}/{uuid}.{ext}
+-- ---------------------------------------------------------------------------
+
+insert into storage.buckets (id, name, public)
+values ('recordings', 'recordings', false)
+on conflict (id) do nothing;
+
+drop policy if exists "Firm members can read their recordings" on storage.objects;
+create policy "Firm members can read their recordings"
+  on storage.objects for select
+  using (
+    bucket_id = 'recordings'
+    and (storage.foldername(name))[1] = public.current_firm_id()
+  );
+
+drop policy if exists "Firm members can upload their recordings" on storage.objects;
+create policy "Firm members can upload their recordings"
+  on storage.objects for insert
+  with check (
+    bucket_id = 'recordings'
+    and (storage.foldername(name))[1] = public.current_firm_id()
+  );
+
+drop policy if exists "Firm members can delete their recordings" on storage.objects;
+create policy "Firm members can delete their recordings"
+  on storage.objects for delete
+  using (
+    bucket_id = 'recordings'
+    and (storage.foldername(name))[1] = public.current_firm_id()
+  );

@@ -396,6 +396,7 @@ model Recording {
   id            String   @id @default(uuid())
   meetingId     String   @unique
   storagePath   String
+  mimeType      String?
   durationSeconds Int?
   status        RecordingStatus @default(RECORDED)
 

@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 
+export const RECORDINGS_BUCKET = "recordings";
+
 export async function listMeetings(firmId: string) {
   return prisma.meeting.findMany({
     where: { firmId },

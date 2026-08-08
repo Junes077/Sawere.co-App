@@ -37,9 +37,14 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
   const isPublicPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
-  const isStaticAsset = pathname.startsWith("/_next") || pathname.startsWith("/api/public");
+  const isStaticAsset = pathname.startsWith("/_next");
+  // Route Handlers under /api/** do their own auth via requireApiUser() and
+  // return a 401 JSON response — redirecting them to /login here would turn
+  // into an HTML redirect that breaks fetch() callers (and blocks signup/
+  // onboarding, which by definition run before a session exists).
+  const isApiRoute = pathname.startsWith("/api/");
 
-  if (!user && !isPublicPath && !isStaticAsset && pathname !== "/") {
+  if (!user && !isPublicPath && !isStaticAsset && !isApiRoute && pathname !== "/") {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/login";
     redirectUrl.searchParams.set("redirectTo", pathname);

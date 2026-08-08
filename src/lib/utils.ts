@@ -5,9 +5,9 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatCurrency(amount: number | string, currency = "KES") {
+export function formatCurrency(amount: number | string, currency = "TZS") {
   const value = typeof amount === "string" ? Number(amount) : amount;
-  return new Intl.NumberFormat("en-KE", {
+  return new Intl.NumberFormat("en-TZ", {
     style: "currency",
     currency,
     maximumFractionDigits: 2,
@@ -16,7 +16,7 @@ export function formatCurrency(amount: number | string, currency = "KES") {
 
 export function formatDate(date: Date | string, opts?: Intl.DateTimeFormatOptions) {
   const d = typeof date === "string" ? new Date(date) : date;
-  return new Intl.DateTimeFormat("en-KE", {
+  return new Intl.DateTimeFormat("en-TZ", {
     year: "numeric",
     month: "short",
     day: "numeric",

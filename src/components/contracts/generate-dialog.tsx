@@ -142,7 +142,7 @@ export function GenerateDraftDialog({
                 rows={5}
                 value={instructions}
                 onChange={(e) => setInstructions(e.target.value)}
-                placeholder="e.g. Demand notice for unpaid rent of KES 150,000, tenant has 14 days to settle before eviction proceedings."
+                placeholder="e.g. Demand notice for unpaid rent of TSh 150,000, tenant has 14 days to settle before eviction proceedings."
               />
             </div>
             <DialogFooter>

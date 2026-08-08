@@ -483,7 +483,7 @@ model Invoice {
   clientId     String
   invoiceNumber String
   status       InvoiceStatus @default(DRAFT)
-  currency     String        @default("KES")
+  currency     String        @default("TZS")
   issueDate    DateTime      @default(now())
   dueDate      DateTime?
   subtotal     Decimal       @db.Decimal(14, 2)

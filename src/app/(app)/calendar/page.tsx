@@ -47,7 +47,7 @@ export default async function CalendarPage({
 
   const prevMonth = subMonths(monthStart, 1).toISOString().slice(0, 7);
   const nextMonth = addMonths(monthStart, 1).toISOString().slice(0, 7);
-  const monthLabel = monthStart.toLocaleString("en-KE", { month: "long", year: "numeric" });
+  const monthLabel = monthStart.toLocaleString("en-TZ", { month: "long", year: "numeric" });
 
   return (
     <div>

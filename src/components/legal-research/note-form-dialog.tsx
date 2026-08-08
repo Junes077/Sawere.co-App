@@ -65,7 +65,7 @@ export function NoteFormDialog() {
               <Label htmlFor="jurisdiction">Jurisdiction</Label>
               <Input
                 id="jurisdiction"
-                placeholder="Kenya, Uganda…"
+                placeholder="Tanzania, Kenya…"
                 value={form.jurisdiction}
                 onChange={(e) => setForm((f) => ({ ...f, jurisdiction: e.target.value }))}
               />

@@ -82,7 +82,7 @@ export default async function DashboardPage() {
                   <li key={event.id} className="flex items-start gap-3 rounded-lg border border-border p-3">
                     <div className="flex flex-col items-center rounded-md bg-secondary px-2 py-1 text-center leading-tight">
                       <span className="text-[10px] uppercase text-muted-foreground">
-                        {new Date(event.startsAt).toLocaleString("en-KE", { month: "short" })}
+                        {new Date(event.startsAt).toLocaleString("en-TZ", { month: "short" })}
                       </span>
                       <span className="font-serif text-lg text-foreground">
                         {new Date(event.startsAt).getDate()}

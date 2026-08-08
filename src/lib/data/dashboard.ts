@@ -49,7 +49,7 @@ export async function getDashboardStats(firmId: string) {
     const total = recentPayments
       .filter((p) => p.paidAt >= monthStart && p.paidAt <= monthEnd)
       .reduce((sum, p) => sum + Number(p.amount), 0);
-    revenueByMonth.push({ month: monthStart.toLocaleString("en-KE", { month: "short" }), revenue: total });
+    revenueByMonth.push({ month: monthStart.toLocaleString("en-TZ", { month: "short" }), revenue: total });
   }
 
   return {

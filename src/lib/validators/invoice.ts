@@ -8,7 +8,7 @@ export const invoiceItemSchema = z.object({
 
 export const invoiceSchema = z.object({
   clientId: z.string().uuid(),
-  currency: z.string().min(3).max(3).default("KES"),
+  currency: z.string().min(3).max(3).default("TZS"),
   dueDate: z.string().optional().or(z.literal("")),
   taxRate: z.number().min(0).max(100).default(0),
   notes: z.string().max(2000).optional().or(z.literal("")),

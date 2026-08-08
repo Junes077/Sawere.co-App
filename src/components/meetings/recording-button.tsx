@@ -3,10 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Mic, RotateCcw, Square } from "lucide-react";
+import { Loader2, Mic, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import type { Recording, Transcript } from "@prisma/client";
+import type { Recording } from "@prisma/client";
 
 const RECORDINGS_BUCKET = "recordings";
 const MIME_CANDIDATES = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"];
@@ -28,8 +28,6 @@ function formatElapsed(seconds: number) {
   return `${m}:${s}`;
 }
 
-type RecordingWithTranscript = Recording & { transcript: Transcript | null };
-
 export function RecordingButton({
   meetingId,
   firmId,
@@ -37,10 +35,10 @@ export function RecordingButton({
 }: {
   meetingId: string;
   firmId: string;
-  recording: RecordingWithTranscript | null;
+  recording: Recording | null;
 }) {
   const router = useRouter();
-  const [status, setStatus] = useState<"idle" | "recording" | "uploading" | "transcribing">("idle");
+  const [status, setStatus] = useState<"idle" | "recording" | "uploading">("idle");
   const [elapsed, setElapsed] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -103,27 +101,10 @@ export function RecordingButton({
         body: JSON.stringify({ storagePath: path, mimeType, durationSeconds: elapsed }),
       });
       if (!res.ok) throw new Error("Could not save the recording");
-      const { recording: created } = await res.json();
 
-      await transcribe(created.id);
+      toast.success("Recording saved");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Recording failed");
-      setStatus("idle");
-      router.refresh();
-    }
-  }
-
-  async function transcribe(recordingId: string) {
-    setStatus("transcribing");
-    try {
-      const res = await fetch(`/api/recordings/${recordingId}/transcribe`, { method: "POST" });
-      if (!res.ok) {
-        const body = await res.json().catch(() => null);
-        throw new Error(body?.error ?? "Transcription failed");
-      }
-      toast.success("Meeting transcribed");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Transcription failed");
     } finally {
       setStatus("idle");
       router.refresh();
@@ -143,24 +124,15 @@ export function RecordingButton({
     );
   }
 
-  if (status === "uploading" || status === "transcribing") {
+  if (status === "uploading") {
     return (
       <Button variant="outline" size="sm" disabled>
-        <Loader2 className="animate-spin" />
-        {status === "uploading" ? "Saving recording…" : "Transcribing…"}
+        <Loader2 className="animate-spin" /> Saving recording…
       </Button>
     );
   }
 
-  if (recording && recording.status !== "TRANSCRIBED") {
-    return (
-      <Button variant="outline" size="sm" onClick={() => transcribe(recording.id)}>
-        <RotateCcw /> Retry transcription
-      </Button>
-    );
-  }
-
-  if (recording?.status === "TRANSCRIBED") {
+  if (recording) {
     return (
       <Button variant="ghost" size="sm" onClick={startRecording} className="text-muted-foreground">
         <Mic /> Re-record

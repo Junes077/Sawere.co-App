@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { MeetingFormDialog } from "@/components/meetings/meeting-form-dialog";
 import { RecordingButton } from "@/components/meetings/recording-button";
+import { RecordingPlayer } from "@/components/meetings/recording-player";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDateTime } from "@/lib/utils";
@@ -35,12 +36,12 @@ export default async function MeetingsPage() {
           <div className="text-sm">
             <p className="font-medium text-foreground">
               <Sparkles className="mr-1 inline size-3.5 text-gold" />
-              Recording &amp; AI transcription
+              Recording
             </p>
             <p className="text-muted-foreground">
               Hit Record on a meeting below with a clear on-screen indicator so everyone in the
-              room knows it&apos;s on. Audio is transcribed and summarized into action items
-              automatically once you stop.
+              room knows it&apos;s on. The audio is saved securely and playable right here.
+              AI transcription and summaries are coming soon.
             </p>
           </div>
         </CardContent>
@@ -66,6 +67,7 @@ export default async function MeetingsPage() {
                   {m.case && ` · ${m.case.title}`}
                   {m.host && ` · hosted by ${m.host.fullName}`}
                 </p>
+                {m.recording && <RecordingPlayer recordingId={m.recording.id} />}
                 {m.recording?.transcript?.summary && (
                   <p className="rounded-md bg-secondary p-3 text-sm text-foreground/90">
                     {m.recording.transcript.summary}

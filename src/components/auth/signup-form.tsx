@@ -20,27 +20,41 @@ export function SignupForm() {
     setLoading(true);
     setError(null);
 
-    const res = await fetch("/api/auth/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    const json = await res.json();
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 20000);
 
-    if (!res.ok) {
-      setError(json.error ?? "Something went wrong.");
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+
+      const json = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setError(json.error ?? "Something went wrong.");
+        return;
+      }
+
+      if (json.needsEmailConfirmation) {
+        setNeedsConfirmation(true);
+        return;
+      }
+
+      router.push("/dashboard");
+      router.refresh();
+    } catch (err) {
+      setError(
+        err instanceof Error && err.name === "AbortError"
+          ? "The server took too long to respond. Please try again."
+          : "Couldn't reach the server. Check your connection and try again.",
+      );
+    } finally {
       setLoading(false);
-      return;
     }
-
-    if (json.needsEmailConfirmation) {
-      setNeedsConfirmation(true);
-      setLoading(false);
-      return;
-    }
-
-    router.push("/dashboard");
-    router.refresh();
   }
 
   if (needsConfirmation) {

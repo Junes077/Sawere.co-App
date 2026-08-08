@@ -18,7 +18,7 @@ stable
 security definer
 set search_path = public
 as $$
-  select "firmId" from public.users where id = auth.uid()
+  select "firmId" from public.users where id = auth.uid()::text
 $$;
 
 do $$

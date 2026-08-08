@@ -4,6 +4,7 @@ import { getClaudeClient, CLAUDE_MODEL, LEGAL_ASSISTANT_SYSTEM_PROMPT } from "@/
 import { buildFirmContext } from "@/lib/data/ai";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 export async function POST(request: Request) {
   const auth = await requireApiUser();

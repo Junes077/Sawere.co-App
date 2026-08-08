@@ -43,11 +43,15 @@ export function AssistantShell({
     setMessages((prev) => [...prev, { role: "USER", content: text }, { role: "ASSISTANT", content: "", pending: true }]);
     setSending(true);
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 55_000);
+
     try {
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ conversationId: activeConversationId, message: text }),
+        signal: controller.signal,
       });
 
       if (!res.ok || !res.body) {
@@ -63,6 +67,7 @@ export function AssistantShell({
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
+        clearTimeout(timeout);
         acc += decoder.decode(value, { stream: true });
         setMessages((prev) => {
           const next = [...prev];
@@ -83,9 +88,16 @@ export function AssistantShell({
         router.refresh();
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Something went wrong.");
+      const message =
+        err instanceof Error && err.name === "AbortError"
+          ? "The assistant took too long to respond. Please try again."
+          : err instanceof Error
+            ? err.message
+            : "Something went wrong.";
+      toast.error(message);
       setMessages((prev) => prev.slice(0, -1));
     } finally {
+      clearTimeout(timeout);
       setSending(false);
     }
   }

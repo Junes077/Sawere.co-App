@@ -14,26 +14,38 @@ const PUBLIC_PATHS = ["/login", "/signup", "/auth/callback", "/reset-password"];
  */
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
-  const { url, anonKey } = getSupabaseEnv();
 
-  const supabase = createServerClient(url, anonKey, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-        supabaseResponse = NextResponse.next({ request });
-        cookiesToSet.forEach(({ name, value, options }) =>
-          supabaseResponse.cookies.set(name, value, options),
-        );
-      },
-    },
-  });
+  let user;
+  try {
+    const { url, anonKey } = getSupabaseEnv();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    const supabase = createServerClient(url, anonKey, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          supabaseResponse = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options),
+          );
+        },
+      },
+    });
+
+    ({
+      data: { user },
+    } = await supabase.auth.getUser());
+  } catch (err) {
+    // A transient Supabase hiccup here would otherwise crash every single
+    // request (this runs on nearly all of them). Fail open and let the
+    // destination route/page do its own auth check instead — pages redirect
+    // via requireUser(), API routes return a clean 401/500 via
+    // requireApiUser() — rather than taking the whole site down.
+    console.error("Middleware session refresh failed", err);
+    return supabaseResponse;
+  }
 
   const pathname = request.nextUrl.pathname;
   const isPublicPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path));

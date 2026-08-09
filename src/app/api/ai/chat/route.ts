@@ -70,7 +70,7 @@ export async function POST(request: Request) {
   try {
     stream = claude.messages.stream({
       model: CLAUDE_MODEL,
-      max_tokens: 1024,
+      max_tokens: 450,
       system: `${LEGAL_ASSISTANT_SYSTEM_PROMPT}\n\n${firmContext}`,
       messages: [...history, { role: "user", content: userMessage }],
     });

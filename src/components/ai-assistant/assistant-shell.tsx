@@ -55,8 +55,14 @@ export function AssistantShell({
       });
 
       if (!res.ok || !res.body) {
-        const json = await res.json().catch(() => ({}));
-        throw new Error(json.error ?? "The assistant couldn't respond.");
+        const json = await res.json().catch(() => null);
+        const fallback =
+          res.status === 504 || res.status === 502
+            ? "The server took too long to respond (a hosting timeout, not a code error). Try a shorter question, or ask your admin to check the Vercel plan's function time limit."
+            : json === null
+              ? `The assistant couldn't respond (server returned an unreadable error, status ${res.status}).`
+              : "The assistant couldn't respond.";
+        throw new Error(json?.error ?? fallback);
       }
 
       const newConversationId = res.headers.get("X-Conversation-Id");

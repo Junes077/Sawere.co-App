@@ -2,12 +2,14 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { acceptInvite, findPendingInviteByToken } from "@/lib/invites";
 
 const signupSchema = z.object({
-  firmName: z.string().min(2).max(120),
+  firmName: z.string().min(2).max(120).optional(),
   fullName: z.string().min(2).max(120),
   email: z.string().email(),
   password: z.string().min(8),
+  inviteToken: z.string().uuid().optional(),
 });
 
 function slugify(input: string) {
@@ -26,7 +28,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
   }
 
-  const { firmName, fullName, email, password } = parsed.data;
+  const { firmName, fullName, email, password, inviteToken } = parsed.data;
+
+  let invite = null;
+  if (inviteToken) {
+    invite = await findPendingInviteByToken(inviteToken);
+    if (!invite) {
+      return NextResponse.json(
+        { error: "This invite link has expired or was already used. Ask for a new one." },
+        { status: 400 },
+      );
+    }
+    if (invite.email.toLowerCase() !== email.toLowerCase()) {
+      return NextResponse.json(
+        { error: "This invite was sent to a different email address." },
+        { status: 400 },
+      );
+    }
+  } else if (!firmName) {
+    return NextResponse.json({ error: "Firm name is required" }, { status: 400 });
+  }
+
   const supabase = await createClient();
 
   const { data, error } = await supabase.auth.signUp({ email, password });
@@ -37,19 +59,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Signup failed. Please try again." }, { status: 500 });
   }
 
-  const baseSlug = slugify(firmName) || "firm";
-  let slug = baseSlug;
-  let attempt = 0;
-  while (await prisma.firm.findUnique({ where: { slug } })) {
-    attempt += 1;
-    slug = `${baseSlug}-${attempt + 1}`;
-  }
-
   try {
-    await prisma.$transaction([
-      prisma.firm.create({
+    if (invite) {
+      await acceptInvite(invite.id, data.user.id, fullName);
+    } else {
+      const baseSlug = slugify(firmName!) || "firm";
+      let slug = baseSlug;
+      let attempt = 0;
+      while (await prisma.firm.findUnique({ where: { slug } })) {
+        attempt += 1;
+        slug = `${baseSlug}-${attempt + 1}`;
+      }
+
+      await prisma.firm.create({
         data: {
-          name: firmName,
+          name: firmName!,
           slug,
           users: {
             create: {
@@ -60,8 +84,8 @@ export async function POST(request: Request) {
             },
           },
         },
-      }),
-    ]);
+      });
+    }
   } catch (err) {
     console.error("Failed to provision firm/user profile after signup", err);
     return NextResponse.json(

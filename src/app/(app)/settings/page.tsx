@@ -10,13 +10,17 @@ import { PreferencesForm } from "@/components/settings/preferences-form";
 import { BackupCard } from "@/components/settings/backup-card";
 import { AuditLogTable } from "@/components/settings/audit-log-table";
 import { IntegrationsPanel } from "@/components/settings/integrations-panel";
+import { UsersPanel } from "@/components/settings/users-panel";
 import { getDictionary, getUserLocale } from "@/lib/i18n";
+
+const MANAGER_ROLES = ["OWNER", "ADMIN"];
 
 export default async function SettingsPage() {
   const user = await requireUser();
   const dict = getDictionary(getUserLocale(user.preferences));
+  const isManager = MANAGER_ROLES.includes(user.role);
 
-  const [firm, auditLogs] = await Promise.all([
+  const [firm, auditLogs, teamUsers, invitations] = await Promise.all([
     prisma.firm.findUniqueOrThrow({ where: { id: user.firmId } }),
     prisma.auditLog.findMany({
       where: { firmId: user.firmId },
@@ -24,6 +28,22 @@ export default async function SettingsPage() {
       take: 50,
       include: { user: true },
     }),
+    prisma.user.findMany({
+      where: { firmId: user.firmId },
+      orderBy: { createdAt: "asc" },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        role: true,
+        title: true,
+        isActive: true,
+        lastLoginAt: true,
+      },
+    }),
+    isManager
+      ? prisma.invitation.findMany({ where: { firmId: user.firmId, status: "PENDING" }, orderBy: { createdAt: "desc" } })
+      : Promise.resolve([]),
   ]);
 
   return (
@@ -34,6 +54,7 @@ export default async function SettingsPage() {
         <TabsList>
           <TabsTrigger value="profile">{dict.settingsTabs.profile}</TabsTrigger>
           <TabsTrigger value="firm">{dict.settingsTabs.firm}</TabsTrigger>
+          <TabsTrigger value="users">{dict.settingsTabs.users}</TabsTrigger>
           <TabsTrigger value="security">{dict.settingsTabs.security}</TabsTrigger>
           <TabsTrigger value="preferences">{dict.settingsTabs.preferences}</TabsTrigger>
           <TabsTrigger value="integrations">{dict.settingsTabs.integrations}</TabsTrigger>
@@ -47,6 +68,14 @@ export default async function SettingsPage() {
         <TabsContent value="firm" className="mt-4 flex max-w-2xl flex-col gap-4">
           <FirmForm firm={firm} editable={["OWNER", "ADMIN"].includes(user.role)} />
           {["OWNER", "ADMIN"].includes(user.role) && <BrandingForm firm={firm} />}
+        </TabsContent>
+        <TabsContent value="users" className="mt-4">
+          <UsersPanel
+            currentUserId={user.id}
+            users={teamUsers}
+            invitations={invitations}
+            isManager={isManager}
+          />
         </TabsContent>
         <TabsContent value="security" className="mt-4 max-w-2xl">
           <SecurityPanel user={user} />

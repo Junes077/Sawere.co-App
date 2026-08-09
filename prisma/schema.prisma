@@ -51,6 +51,7 @@ model Firm {
   writingSamples   WritingStyleSample[]
   documentTemplates DocumentTemplate[]
   legalResearchNotes LegalResearchNote[]
+  invitations      Invitation[]
 
   @@map("firms")
 }
@@ -95,6 +96,7 @@ model User {
   aiConversations  AiConversation[]
   documentsUploaded Document[]      @relation("DocumentUploader")
   notes            CaseNote[]
+  invitationsSent  Invitation[]     @relation("InvitationInviter")
 
   @@index([firmId])
   @@map("users")
@@ -108,6 +110,36 @@ enum UserRole {
   STAFF
   RESEARCHER
   READ_ONLY
+}
+
+/// An admin-issued invite that lets a teammate join THIS firm (instead of
+/// signing up and accidentally provisioning their own separate firm — see
+/// src/lib/invites.ts). No email is sent automatically (no email provider is
+/// configured yet); the admin shares the generated link directly.
+model Invitation {
+  id          String           @id @default(uuid())
+  firmId      String
+  email       String
+  role        UserRole         @default(ADVOCATE)
+  token       String           @unique @default(uuid())
+  status      InvitationStatus @default(PENDING)
+  invitedById String?
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime         @default(now())
+
+  firm      Firm  @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  invitedBy User? @relation("InvitationInviter", fields: [invitedById], references: [id])
+
+  @@index([firmId])
+  @@index([email])
+  @@map("invitations")
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
 }
 
 // ---------------------------------------------------------------------------

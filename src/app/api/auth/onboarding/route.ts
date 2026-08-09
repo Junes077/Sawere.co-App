@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { acceptInvite, findPendingInviteByEmail } from "@/lib/invites";
 
 const onboardingSchema = z.object({
   firmName: z.string().min(2).max(120),
@@ -40,6 +41,13 @@ export async function POST(request: Request) {
   }
 
   const { firmName, fullName } = parsed.data;
+
+  const invite = await findPendingInviteByEmail(authUser.email ?? "");
+  if (invite) {
+    await acceptInvite(invite.id, authUser.id, fullName);
+    return NextResponse.json({ ok: true });
+  }
+
   const baseSlug = slugify(firmName) || "firm";
   let slug = baseSlug;
   let attempt = 0;

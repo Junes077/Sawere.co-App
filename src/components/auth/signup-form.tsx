@@ -1,19 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, CheckCircle2 } from "lucide-react";
+import { Loader2, CheckCircle2, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function SignupForm() {
+type InviteInfo = { firmName: string; email: string; role: string };
+
+export function SignupForm({ inviteToken }: { inviteToken?: string }) {
   const router = useRouter();
   const [form, setForm] = useState({ firmName: "", fullName: "", email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
+  const [invite, setInvite] = useState<InviteInfo | null>(null);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!inviteToken) return;
+    fetch(`/api/auth/invite-info?token=${encodeURIComponent(inviteToken)}`)
+      .then((res) => res.json().then((json) => ({ ok: res.ok, json })))
+      .then(({ ok, json }) => {
+        if (!ok) {
+          setInviteError(json.error ?? "This invite link is no longer valid.");
+          return;
+        }
+        setInvite(json);
+        setForm((f) => ({ ...f, email: json.email }));
+      })
+      .catch(() => setInviteError("Couldn't check this invite link. Try again."));
+  }, [inviteToken]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -27,7 +46,7 @@ export function SignupForm() {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(invite ? { ...form, inviteToken } : form),
         signal: controller.signal,
       });
       clearTimeout(timeout);
@@ -64,8 +83,21 @@ export function SignupForm() {
         <h1 className="font-serif text-xl text-foreground">Check your inbox</h1>
         <p className="text-sm text-muted-foreground">
           We sent a confirmation link to <strong>{form.email}</strong>. Confirm your email to
-          finish setting up {form.firmName}.
+          finish {invite ? `joining ${invite.firmName}` : `setting up ${form.firmName}`}.
         </p>
+        <Link href="/login" className="text-sm text-accent hover:underline">
+          Back to sign in
+        </Link>
+      </div>
+    );
+  }
+
+  if (inviteToken && inviteError) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-6 text-center">
+        <h1 className="font-serif text-xl text-foreground">Invite link not valid</h1>
+        <p className="text-sm text-muted-foreground">{inviteError}</p>
+        <p className="text-sm text-muted-foreground">Ask whoever invited you to send a new link.</p>
         <Link href="/login" className="text-sm text-accent hover:underline">
           Back to sign in
         </Link>
@@ -76,23 +108,29 @@ export function SignupForm() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="font-serif text-2xl text-foreground">Set up your firm</h1>
+        <h1 className="font-serif text-2xl text-foreground">
+          {invite ? `Join ${invite.firmName}` : "Set up your firm"}
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Create the workspace for your practice. You&apos;ll be the firm owner.
+          {invite
+            ? `You've been invited as ${invite.role.replace("_", " ").toLowerCase()}. Create your password to finish joining.`
+            : "Create the workspace for your practice. You'll be the firm owner."}
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="firmName">Firm name</Label>
-          <Input
-            id="firmName"
-            required
-            value={form.firmName}
-            onChange={(e) => setForm((f) => ({ ...f, firmName: e.target.value }))}
-            placeholder="Sawere & Company Advocates"
-          />
-        </div>
+        {!invite && (
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="firmName">Firm name</Label>
+            <Input
+              id="firmName"
+              required
+              value={form.firmName}
+              onChange={(e) => setForm((f) => ({ ...f, firmName: e.target.value }))}
+              placeholder="Sawere & Company Advocates"
+            />
+          </div>
+        )}
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="fullName">Your full name</Label>
           <Input
@@ -109,9 +147,11 @@ export function SignupForm() {
             id="email"
             type="email"
             required
+            readOnly={Boolean(invite)}
             value={form.email}
             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
             placeholder="you@sawereadvocates.com"
+            className={invite ? "bg-secondary" : undefined}
           />
         </div>
         <div className="flex flex-col gap-1.5">
@@ -134,8 +174,8 @@ export function SignupForm() {
         )}
 
         <Button type="submit" disabled={loading} className="mt-1">
-          {loading && <Loader2 className="animate-spin" />}
-          Create firm workspace
+          {loading ? <Loader2 className="animate-spin" /> : invite ? <UserPlus /> : null}
+          {invite ? "Join firm" : "Create firm workspace"}
         </Button>
       </form>
 

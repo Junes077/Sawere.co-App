@@ -101,6 +101,7 @@ export const sw: Dictionary = {
   settingsTabs: {
     profile: "Wasifu",
     firm: "Kampuni",
+    users: "Timu",
     security: "Usalama",
     preferences: "Mapendeleo",
     integrations: "Muunganisho",

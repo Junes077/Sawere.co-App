@@ -90,6 +90,7 @@ export const en = {
   settingsTabs: {
     profile: "Profile",
     firm: "Firm",
+    users: "Team",
     security: "Security",
     preferences: "Preferences",
     integrations: "Integrations",

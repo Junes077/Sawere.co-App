@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",
+    "@capacitor/android": "^8.5.0",
     "@hookform/resolvers": "^5.7.1",
     "@prisma/client": "5.22.0",
     "@radix-ui/react-avatar": "^1.2.6",

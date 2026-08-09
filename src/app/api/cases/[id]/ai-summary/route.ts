@@ -45,24 +45,30 @@ ${caseRecord.notes.map((n) => `- ${n.body}`).join("\n") || "No notes yet."}
 
 Documents on file: ${caseRecord.documents.map((d) => d.fileName).join(", ") || "None"}`;
 
-  const message = await claude.messages.create({
-    model: CLAUDE_MODEL,
-    max_tokens: 600,
-    system:
-      "You write concise legal case summaries for an advocate's internal dashboard. Summarize only from the facts given — never invent case details. 3-5 sentences, plain language, then a short bullet list of open items.",
-    messages: [{ role: "user", content: context }],
-  });
+  try {
+    const message = await claude.messages.create({
+      model: CLAUDE_MODEL,
+      max_tokens: 600,
+      system:
+        "You write concise legal case summaries for an advocate's internal dashboard. Summarize only from the facts given — never invent case details. 3-5 sentences, plain language, then a short bullet list of open items.",
+      messages: [{ role: "user", content: context }],
+    });
 
-  const summary = message.content
-    .filter((block) => block.type === "text")
-    .map((block) => block.text)
-    .join("\n")
-    .trim();
+    const summary = message.content
+      .filter((block) => block.type === "text")
+      .map((block) => block.text)
+      .join("\n")
+      .trim();
 
-  const updated = await prisma.case.update({
-    where: { id },
-    data: { aiSummary: summary },
-  });
+    const updated = await prisma.case.update({
+      where: { id },
+      data: { aiSummary: summary },
+    });
 
-  return NextResponse.json({ aiSummary: updated.aiSummary });
+    return NextResponse.json({ aiSummary: updated.aiSummary });
+  } catch (err) {
+    console.error("Case AI summary failed", err);
+    const message = err instanceof Error ? err.message : "Couldn't generate a summary.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

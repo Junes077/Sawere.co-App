@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { SearchBox } from "@/components/shared/search-box";
 import { EmptyState } from "@/components/shared/empty-state";
 import { CaseFormDialog } from "@/components/cases/case-form-dialog";
+import { BulkSummarizeButton } from "@/components/cases/bulk-summarize-button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -45,7 +46,12 @@ export default async function CasesPage({
       <PageHeader
         title={dict.pages.cases.title}
         description={dict.pages.cases.description}
-        actions={<CaseFormDialog clients={clients} advocates={advocates} />}
+        actions={
+          <>
+            <BulkSummarizeButton caseIds={cases.filter((c) => !c.aiSummary).map((c) => c.id)} />
+            <CaseFormDialog clients={clients} advocates={advocates} />
+          </>
+        }
       />
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -90,11 +96,14 @@ export default async function CasesPage({
             <TableBody>
               {cases.map((c) => (
                 <TableRow key={c.id}>
-                  <TableCell>
+                  <TableCell className="max-w-xs">
                     <Link href={`/cases/${c.id}`} className="font-medium text-foreground hover:text-accent">
                       {c.title}
                     </Link>
                     <p className="text-xs text-muted-foreground">{c.caseNumber}</p>
+                    {c.aiSummary && (
+                      <p className="mt-1 line-clamp-2 text-xs text-muted-foreground/80">{c.aiSummary}</p>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Link href={`/clients/${c.clientId}`} className="text-muted-foreground hover:text-accent">

@@ -7,22 +7,25 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function POST(request: Request) {
-  const auth = await requireApiUser();
-  if ("response" in auth) return auth.response;
-  const { user } = auth;
-
-  const body = await request.json().catch(() => null);
-  const conversationId: string | undefined = body?.conversationId;
-  const userMessage: string | undefined = body?.message;
-
-  if (!userMessage?.trim()) {
-    return new Response(JSON.stringify({ error: "Message is required" }), { status: 400 });
-  }
-
   let conversation;
   let claude;
   let firmContext: string;
+  let user;
+  let userMessage: string;
   try {
+    const auth = await requireApiUser();
+    if ("response" in auth) return auth.response;
+    user = auth.user;
+
+    const body = await request.json().catch(() => null);
+    const conversationId: string | undefined = body?.conversationId;
+    const message: string | undefined = body?.message;
+
+    if (!message?.trim()) {
+      return new Response(JSON.stringify({ error: "Message is required" }), { status: 400 });
+    }
+    userMessage = message;
+
     conversation = conversationId
       ? await prisma.aiConversation.findFirst({
           where: { id: conversationId, firmId: user.firmId, userId: user.id },

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/shared/page-header";
 import { SearchBox } from "@/components/shared/search-box";
 import { UploadDocumentDialog } from "@/components/documents/upload-dialog";
+import { BulkUploadDialog } from "@/components/documents/bulk-upload-dialog";
 import { DocumentsList } from "@/components/documents/documents-list";
 import { DocumentFoldersPanel } from "@/components/documents/document-folders-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -31,7 +32,12 @@ export default async function DocumentsPage({
       <PageHeader
         title={dict.pages.documents.title}
         description={dict.pages.documents.description}
-        actions={<UploadDocumentDialog firmId={user.firmId} clients={clients} cases={cases} />}
+        actions={
+          <>
+            <BulkUploadDialog firmId={user.firmId} clients={clients} cases={cases} />
+            <UploadDocumentDialog firmId={user.firmId} clients={clients} cases={cases} />
+          </>
+        }
       />
 
       <Tabs defaultValue="all">

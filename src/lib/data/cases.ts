@@ -33,6 +33,7 @@ export async function getCaseDetail(firmId: string, id: string) {
       tasks: { orderBy: { createdAt: "desc" } },
       notes: { orderBy: { createdAt: "desc" }, include: { author: true } },
       deadlines: { orderBy: { dueAt: "asc" } },
+      legalResearchNotes: { orderBy: { createdAt: "desc" } },
     },
   });
 }

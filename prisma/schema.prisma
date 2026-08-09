@@ -168,6 +168,7 @@ model Client {
   invoices   Invoice[]
   calendarEvents CalendarEvent[]
   tasks      Task[]
+  legalResearchNotes LegalResearchNote[]
 
   @@index([firmId])
   @@index([firmId, fullName])
@@ -215,6 +216,7 @@ model Case {
   tasks          Task[]
   notes          CaseNote[]
   deadlines      CaseDeadline[]
+  legalResearchNotes LegalResearchNote[]
 
   @@unique([firmId, caseNumber])
   @@index([firmId, status])
@@ -641,20 +643,30 @@ enum AiMessageRole {
   SYSTEM
 }
 
-/// Extension point for the AI Legal Research module: saved judgments,
-/// tracked updates and summaries an advocate has pinned.
+/// Judgments, legislation and gazette entries an advocate has pinned from
+/// the Legal Research search (or logged manually) — see src/lib/legal-research.
 model LegalResearchNote {
-  id          String   @id @default(uuid())
-  firmId      String
-  title       String
-  sourceUrl   String?
+  id           String   @id @default(uuid())
+  firmId       String
+  clientId     String?
+  caseId       String?
+  title        String
+  sourceUrl    String?
   jurisdiction String?
-  summary     String?
-  createdAt   DateTime @default(now())
+  practiceArea String?
+  sourceType   String?
+  court        String?
+  citation     String?
+  caseNumber   String?
+  summary      String?
+  createdAt    DateTime @default(now())
 
-  firm Firm @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  firm   Firm    @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  client Client? @relation(fields: [clientId], references: [id])
+  case   Case?   @relation(fields: [caseId], references: [id])
 
   @@index([firmId])
+  @@index([caseId])
   @@map("legal_research_notes")
 }
 

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Gavel, Scale, User as UserIcon, FileText, Video, ListChecks } from "lucide-react";
+import { Gavel, Scale, User as UserIcon, FileText, Video, ListChecks, BookOpenText, ExternalLink } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { getCaseDetail, listFirmAdvocates } from "@/lib/data/cases";
 import { listClients } from "@/lib/data/clients";
@@ -92,6 +92,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
               <TabsTrigger value="documents">Documents ({caseRecord.documents.length})</TabsTrigger>
               <TabsTrigger value="meetings">Meetings ({caseRecord.meetings.length})</TabsTrigger>
               <TabsTrigger value="tasks">Tasks ({caseRecord.tasks.length})</TabsTrigger>
+              <TabsTrigger value="research">Research ({caseRecord.legalResearchNotes.length})</TabsTrigger>
             </TabsList>
 
             <TabsContent value="deadlines" className="mt-4">
@@ -149,6 +150,42 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
                       <CardContent className="flex items-center justify-between p-4">
                         <p className="font-medium text-foreground">{t.title}</p>
                         <Badge variant="outline">{t.status.replace("_", " ")}</Badge>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+            <TabsContent value="research" className="mt-4">
+              {caseRecord.legalResearchNotes.length === 0 ? (
+                <EmptyState
+                  icon={BookOpenText}
+                  title="No research saved to this case yet"
+                  description="Find sources in Legal Research and use “Save” to link them here."
+                />
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {caseRecord.legalResearchNotes.map((note) => (
+                    <Card key={note.id}>
+                      <CardContent className="flex flex-col gap-1.5 p-4">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="font-medium text-foreground">{note.title}</p>
+                          {note.jurisdiction && <Badge variant="outline">{note.jurisdiction}</Badge>}
+                        </div>
+                        {note.summary && <p className="text-sm text-muted-foreground">{note.summary}</p>}
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>{formatDate(note.createdAt)}</span>
+                          {note.sourceUrl && (
+                            <a
+                              href={note.sourceUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-accent hover:underline"
+                            >
+                              Source <ExternalLink className="size-3" />
+                            </a>
+                          )}
+                        </div>
                       </CardContent>
                     </Card>
                   ))}
